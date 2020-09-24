@@ -1,5 +1,5 @@
 /**
- *  Daikin WiFi Split System
+ *  Daikin WiFi Airbase
  *  V 1.4.1 - 11/12/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
@@ -38,24 +38,19 @@
 import groovy.transform.Field
 
 @Field final Map DAIKIN_MODES = [
-    "0":    "auto",
-    "1":    "auto",
-    "2":    "dry",
-    "3":    "cool",
-    "4":    "heat",
-    "6":    "fan",
-    "7":    "auto",
+    "0":    "fan",
+    "1":    "heat",
+    "2":    "cool",
+    "3":    "auto",
+    "7":    "dry",
     "off": "off",
 ]
 
 @Field final Map DAIKIN_FAN_RATE = [
     "A":    "Auto",
-    "B":    "Silence",
-    "3":    "1",
-    "4":    "2",
-    "5":    "3",
-    "6":    "4",
-    "7":    "5"
+    "1":    "1",
+    "3":    "2",
+    "4":    "3"
 ]
 
 @Field final Map DAIKIN_FAN_DIRECTION = [
@@ -66,7 +61,7 @@ import groovy.transform.Field
 ]
 
 metadata {
-    definition (name: "Daikin WiFi Split System", namespace: "bendews", author: "contact@bendews.com") {
+    definition (name: "Daikin WiFi AirbaseSystem", namespace: "psmedley", author: "paul@smedley.id.au") {
         capability "Thermostat"
         capability "Temperature Measurement"
         capability "Actuator"
@@ -146,7 +141,7 @@ metadata {
         valueTile("fanRateText", "device.fanRate",width: 3, height: 1) {
             state "val", label:'Fan Rate: ${currentValue}', defaultState: true
         }
-        controlTile("fanRateSlider", "device.fanRate", "slider", height: 1, width: 1, range:"(1..5)") {
+        controlTile("fanRateSlider", "device.fanRate", "slider", height: 1, width: 1, range:"(1..3)") {
             state "level", action:"setFanRate"
         }
         standardTile("fanRateAuto", "device.fanRate", width:1, height:1) {
@@ -376,13 +371,13 @@ private updateDaikinDevice(Boolean turnOff = false){
 
     def apiCalls = [
         // Send HTTP Call to update device
-        apiGet("/aircon/set_control_info"+pow+mode+sTemp+fRate+fDir+"&shum=0"),
+        apiGet("/skyfi/aircon/set_control_info"+pow+mode+sTemp+fRate+fDir+"&shum=0"),
         delayAction(500),
         // Get mode info
-        apiGet("/aircon/get_control_info"),
+        apiGet("/skyfi/aircon/get_control_info"),
         delayAction(500),
         // Get temperature info
-        apiGet("/aircon/get_sensor_info")
+        apiGet("/skyfi/aircon/get_sensor_info")
     ]
     return apiCalls
 }
@@ -437,9 +432,9 @@ def poll() {
 def refresh() {
     log.debug "Refreshing"
     def apiCalls = [
-        sendHubCommand(apiGet("/aircon/get_sensor_info")),
+        sendHubCommand(apiGet("/skyfi/aircon/get_sensor_info")),
         sendHubCommand(delayAction(500)),
-        sendHubCommand(apiGet("/aircon/get_control_info"))
+        sendHubCommand(apiGet("/skyfi/aircon/get_control_info"))
         ]
     return apiCalls
 }
@@ -616,7 +611,7 @@ private updateEvents(Map args){
 // Temperature Functions
 def tempUp() {
     log.debug "tempUp()"
-    def step = 0.5
+    def step = 1.0
     def mode = device.currentValue("thermostatMode")
     def targetTemp = device.currentValue("targetTemp")
     def value = targetTemp + step
@@ -625,7 +620,7 @@ def tempUp() {
 
 def tempDown() {
     log.debug "tempDown()"
-    def step = 0.5
+    def step = 1.0
     def mode = device.currentValue("thermostatMode")
     def targetTemp = device.currentValue("targetTemp")
     def value = targetTemp - step
@@ -835,4 +830,3 @@ def fanAuto() {
     // TODO: handle 'setSchedule' command
 // }
 // -------
-
